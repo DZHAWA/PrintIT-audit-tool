@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:PrintIT.ViewModels"
+             xmlns:models="clr-namespace:PrintIT.Models"
+             x:Class="PrintIT.Views.SessionsPage"
+             x:DataType="viewmodels:MainViewModel"
+             Title="Учёты"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto, *, Auto"
+          Padding="{OnIdiom Phone='20,28,20,16', Default='32,40,32,24'}"
+          MaximumWidthRequest="760">
+
+        <!-- Шапка -->
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" ColumnSpacing="16" Margin="0,0,0,24">
+            <VerticalStackLayout Spacing="6" VerticalOptions="Center">
+                <Label Text="Учёт принтеров"
+                       Style="{StaticResource TextDisplay}"
+                       SemanticProperties.HeadingLevel="Level1"/>
+                <Label Text="Комитет по образованию СПб"
+                       Style="{StaticResource TextSecondary}"/>
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Новый учёт"
+                    Style="{StaticResource PrimaryButton}"
+                    HeightRequest="44"
+                    VerticalOptions="Center"
+                    IsVisible="{OnIdiom Phone=False, Default=True}"
+                    Command="{Binding CreateNewSessionCommand}"/>
+        </Grid>
+
+        <!-- Пустое состояние -->
+        <VerticalStackLayout Grid.Row="1"
+                             IsVisible="{Binding IsEmpty}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             MaximumWidthRequest="340"
+                             Spacing="8"
+                             Margin="0,0,0,48">
+            <Border WidthRequest="64" HeightRequest="64"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 32"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceSunken}, Dark={StaticResource SurfaceSunkenDark}}"
+                    HorizontalOptions="Center"
+                    Margin="0,0,0,8">
+                <Path Data="{StaticResource IconPrinter}" Style="{StaticResource IconMuted}" Scale="1.25"/>
+            </Border>
+            <Label Text="Учётов пока нет"
+                   Style="{StaticResource TextHeading}"
+                   HorizontalTextAlignment="Center"/>
+            <Label Text="Создайте учёт и пройдите по кабинетам — устройства удобно отмечать прямо на месте."
+                   Style="{StaticResource TextSecondary}"
+                   HorizontalTextAlignment="Center"/>
+        </VerticalStackLayout>
+
+        <!-- Список учётов -->
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding Sessions}"
+                        IsVisible="{Binding IsEmpty, Converter={StaticResource InverseBoolConverter}}"
+                        SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10"/>
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:InventorySession">
+                    <Border Style="{StaticResource CardInteractive}" Padding="0">
+                        <Grid ColumnDefinitions="*, Auto">
+
+                            <!-- Кликабельная часть карточки: открыть учёт -->
+                            <Grid Padding="16,14,4,14" ColumnDefinitions="*, Auto" ColumnSpacing="12"
+                                  SemanticProperties.Description="{Binding Title, StringFormat='Открыть учёт {0}'}">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}, Path=OpenSessionCommand}"
+                                                          CommandParameter="{Binding .}"/>
+                                </Grid.GestureRecognizers>
+
+                                <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+                                    <Label Text="{Binding Title}"
+                                           Style="{StaticResource TextHeading}"
+                                           MaxLines="2"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Style="{StaticResource TextCaption}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding CreatedAt, StringFormat='{0:d MMMM yyyy}'}"/>
+                                                <Span Text="  ·  "/>
+                                                <Span Text="{Binding Rooms.Count, Converter={StaticResource PluralConverter}, ConverterParameter='кабинет|кабинета|кабинетов'}"/>
+                                                <Span Text="  ·  "/>
+                                                <Span Text="{Binding TotalPrinters, Converter={StaticResource PluralConverter}, ConverterParameter='устройство|устройства|устройств'}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </VerticalStackLayout>
+
+                                <Border Grid.Column="1"
+                                        Style="{StaticResource TagCritical}"
+                                        IsVisible="{Binding UrgentCount, Converter={StaticResource IsPositiveConverter}}">
+                                    <Label Text="{Binding UrgentCount, StringFormat='{0} на замену'}"
+                                           Style="{StaticResource TagTextCritical}"/>
+                                </Border>
+                            </Grid>
+
+                            <!-- Удаление -->
+                            <Border Grid.Column="1"
+                                    Style="{StaticResource IconButton}"
+                                    Margin="0,0,8,0"
+                                    ToolTipProperties.Text="Удалить учёт"
+                                    SemanticProperties.Description="Удалить учёт">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}, Path=DeleteSessionCommand}"
+                                                          CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                                <Path Data="{StaticResource IconTrash}" Style="{StaticResource IconMuted}"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Основное действие на телефоне — в зоне большого пальца -->
+        <Button Grid.Row="2"
+                Text="Новый учёт"
+                Style="{StaticResource PrimaryButton}"
+                Margin="0,16,0,0"
+                IsVisible="{OnIdiom Phone=True, Default=False}"
+                Command="{Binding CreateNewSessionCommand}"/>
+    </Grid>
+</ContentPage>

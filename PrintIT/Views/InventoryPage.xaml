@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:PrintIT.ViewModels"
+             xmlns:models="clr-namespace:PrintIT.Models"
+             x:Class="PrintIT.Views.InventoryPage"
+             x:DataType="viewmodels:InventoryViewModel"
+             Title="{OnPlatform WinUI='', Default='Кабинеты'}">
+
+    <Grid>
+        <!-- ===== Основной экран ===== -->
+        <Grid RowDefinitions="Auto, Auto, *, Auto"
+              Padding="{OnIdiom Phone='20,8,20,16', Default='32,24,32,24'}"
+              MaximumWidthRequest="760">
+
+            <!-- Заголовок учёта и сводка -->
+            <VerticalStackLayout Grid.Row="0" Spacing="6" Margin="0,0,0,20">
+                <Label Text="{Binding Session.Title}"
+                       Style="{StaticResource TextTitle}"
+                       SemanticProperties.HeadingLevel="Level1"/>
+                <Label Text="{Binding SummaryText}"
+                       Style="{StaticResource TextSecondary}"/>
+            </VerticalStackLayout>
+
+            <!-- Добавление кабинета -->
+            <Grid Grid.Row="1" ColumnDefinitions="*, Auto" ColumnSpacing="8" Margin="0,0,0,16">
+                <Border Style="{StaticResource Field}">
+                    <Entry Text="{Binding NewRoomNumber}"
+                           Placeholder="Номер кабинета, например 326"
+                           ReturnType="Done"
+                           ReturnCommand="{Binding AddRoomCommand}"
+                           SemanticProperties.Description="Номер нового кабинета"/>
+                </Border>
+                <Button Grid.Column="1"
+                        Text="Добавить"
+                        Style="{StaticResource SecondaryButton}"
+                        HeightRequest="48"
+                        Command="{Binding AddRoomCommand}"/>
+            </Grid>
+
+            <!-- Кабинеты -->
+            <CollectionView Grid.Row="2" ItemsSource="{Binding Session.Rooms}" SelectionMode="None">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="12"/>
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.EmptyView>
+                    <ContentView>
+                        <VerticalStackLayout Padding="0,56" Spacing="8"
+                                             HorizontalOptions="Center"
+                                             MaximumWidthRequest="320">
+                            <Border WidthRequest="56" HeightRequest="56"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 28"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceSunken}, Dark={StaticResource SurfaceSunkenDark}}"
+                                    HorizontalOptions="Center"
+                                    Margin="0,0,0,8">
+                                <Path Data="{StaticResource IconPrinter}" Style="{StaticResource IconMuted}"/>
+                            </Border>
+                            <Label Text="Кабинетов пока нет"
+                                   Style="{StaticResource TextHeading}"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Введите номер кабинета выше, затем добавьте в него устройства."
+                                   Style="{StaticResource TextSecondary}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </ContentView>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:OfficeRoom">
+                        <Border Style="{StaticResource Card}" Padding="0">
+                            <VerticalStackLayout>
+
+                                <!-- Шапка кабинета -->
+                                <Grid ColumnDefinitions="*, Auto" Padding="16,12,8,12">
+                                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                        <Label Text="{Binding RoomNumber, StringFormat='Кабинет {0}'}"
+                                               Style="{StaticResource TextHeading}"/>
+                                        <Label Text="{Binding Printers.Count, Converter={StaticResource PluralConverter}, ConverterParameter='устройство|устройства|устройств'}"
+                                               Style="{StaticResource TextCaption}"/>
+                                    </VerticalStackLayout>
+
+                                    <Border Grid.Column="1"
+                                            Style="{StaticResource IconButton}"
+                                            ToolTipProperties.Text="Удалить кабинет"
+                                            SemanticProperties.Description="Удалить кабинет">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:InventoryViewModel}}, Path=DeleteRoomCommand}"
+                                                                  CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                        <Path Data="{StaticResource IconTrash}" Style="{StaticResource IconMuted}"/>
+                                    </Border>
+                                </Grid>
+
+                                <BoxView Style="{StaticResource Divider}"/>
+
+                                <!-- Устройства -->
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Printers}" Padding="0,4">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="models:PrinterItem">
+                                            <Grid ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="12" Padding="16,6,8,6">
+                                                <Path Data="{StaticResource IconPrinter}" Style="{StaticResource IconMuted}"/>
+
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding Model}"
+                                                       VerticalOptions="Center"
+                                                       MaxLines="2"
+                                                       LineBreakMode="TailTruncation"/>
+
+                                                <!-- Состояние картриджа: нажатие переключает -->
+                                                <Border Grid.Column="2"
+                                                        Style="{StaticResource Tag}"
+                                                        ToolTipProperties.Text="Нажмите, чтобы изменить состояние картриджа"
+                                                        SemanticProperties.Description="Состояние картриджа, нажмите для переключения">
+                                                    <Border.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:InventoryViewModel}}, Path=ToggleUrgentCommand}"
+                                                                              CommandParameter="{Binding .}"/>
+                                                    </Border.GestureRecognizers>
+                                                    <Border.Triggers>
+                                                        <DataTrigger TargetType="Border" Binding="{Binding IsUrgent}" Value="True">
+                                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource CriticalSoft}, Dark={StaticResource CriticalSoftDark}}"/>
+                                                        </DataTrigger>
+                                                    </Border.Triggers>
+                                                    <Label Text="В норме" Style="{StaticResource TagText}">
+                                                        <Label.Triggers>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsUrgent}" Value="True">
+                                                                <Setter Property="Text" Value="Нужна замена"/>
+                                                                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Critical}, Dark={StaticResource CriticalDark}}"/>
+                                                            </DataTrigger>
+                                                        </Label.Triggers>
+                                                    </Label>
+                                                </Border>
+
+                                                <Border Grid.Column="3"
+                                                        Style="{StaticResource IconButton}"
+                                                        ToolTipProperties.Text="Убрать устройство"
+                                                        SemanticProperties.Description="Убрать устройство">
+                                                    <Border.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:InventoryViewModel}}, Path=DeletePrinterCommand}"
+                                                                              CommandParameter="{Binding .}"/>
+                                                    </Border.GestureRecognizers>
+                                                    <Path Data="{StaticResource IconClose}" Style="{StaticResource IconMuted}"/>
+                                                </Border>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+
+                                <Label Text="Устройств пока нет"
+                                       Style="{StaticResource TextCaption}"
+                                       Padding="16,4,16,12"
+                                       IsVisible="{Binding Printers.Count, Converter={StaticResource IsZeroConverter}}"/>
+
+                                <BoxView Style="{StaticResource Divider}"/>
+
+                                <!-- Добавить устройство -->
+                                <Border Style="{StaticResource RowButton}"
+                                        SemanticProperties.Description="Добавить устройство в кабинет">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:InventoryViewModel}}, Path=OpenAddPrinterDialogCommand}"
+                                                              CommandParameter="{Binding .}"/>
+                                    </Border.GestureRecognizers>
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Path Data="{StaticResource IconPlus}" Style="{StaticResource IconAccent}"/>
+                                        <Label Text="Добавить устройство"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               VerticalOptions="Center"
+                                               TextColor="{AppThemeBinding Light={StaticResource Accent}, Dark={StaticResource AccentDark}}"/>
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Основное действие экрана -->
+            <Button Grid.Row="3"
+                    Text="Сформировать отчёт"
+                    Style="{StaticResource PrimaryButton}"
+                    Margin="0,16,0,0"
+                    Command="{Binding GoToExportCommand}"/>
+        </Grid>
+
+        <!-- ===== Добавление устройства: нижняя панель на телефоне, диалог на компьютере ===== -->
+        <Grid IsVisible="{Binding IsAddPrinterDialogVisible}">
+            <BoxView Color="{AppThemeBinding Light={StaticResource Scrim}, Dark={StaticResource ScrimDark}}">
+                <BoxView.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CloseAddPrinterDialogCommand}"/>
+                </BoxView.GestureRecognizers>
+            </BoxView>
+
+            <Border Style="{StaticResource Card}"
+                    Padding="0"
+                    StrokeShape="RoundRectangle 18"
+                    MaximumWidthRequest="480"
+                    Margin="{OnIdiom Phone='8', Default='24'}"
+                    VerticalOptions="{OnIdiom Phone=End, Default=Center}">
+                <Grid RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
+
+                    <!-- Заголовок -->
+                    <Grid ColumnDefinitions="*, Auto" Padding="20,16,12,4">
+                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                            <Label Text="Добавить устройство"
+                                   Style="{StaticResource TextHeading}"
+                                   SemanticProperties.HeadingLevel="Level2"/>
+                            <Label Text="{Binding SelectedRoomTitle}" Style="{StaticResource TextCaption}"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1"
+                                Style="{StaticResource IconButton}"
+                                ToolTipProperties.Text="Закрыть"
+                                SemanticProperties.Description="Закрыть">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CloseAddPrinterDialogCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Path Data="{StaticResource IconClose}" Style="{StaticResource Icon}"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- Поиск по справочнику -->
+                    <Border Grid.Row="1" Style="{StaticResource FieldSunken}" Margin="20,12,20,4">
+                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8">
+                            <Path Data="{StaticResource IconSearch}" Style="{StaticResource IconMuted}"/>
+                            <Entry Grid.Column="1"
+                                   Text="{Binding PrinterSearchText}"
+                                   Placeholder="Модель: HP, Kyocera, Катюша…"
+                                   SemanticProperties.Description="Поиск модели"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Состояние картриджа -->
+                    <Grid Grid.Row="2" ColumnDefinitions="*, Auto" Padding="20,8,16,8">
+                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                            <Label Text="Нужна замена картриджа" FontSize="14"/>
+                            <Label Text="Можно изменить позже в списке" Style="{StaticResource TextCaption}" FontSize="12"/>
+                        </VerticalStackLayout>
+                        <Switch Grid.Column="1" IsToggled="{Binding IsPrinterUrgent}"/>
+                    </Grid>
+
+                    <BoxView Grid.Row="3" Style="{StaticResource Divider}"/>
+
+                    <!-- Новой модели нет в справочнике -->
+                    <Border Grid.Row="4"
+                            Style="{StaticResource RowButton}"
+                            Padding="20,12"
+                            IsVisible="{Binding ShowAddCustomButton}">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding RegisterCustomModelAndAddCommand}"/>
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="10">
+                            <Path Data="{StaticResource IconPlus}" Style="{StaticResource IconAccent}"/>
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <Label Text="{Binding PrinterSearchText, StringFormat='Добавить «{0}»'}"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       LineBreakMode="TailTruncation"
+                                       TextColor="{AppThemeBinding Light={StaticResource Accent}, Dark={StaticResource AccentDark}}"/>
+                                <Label Text="Модель сохранится в справочнике" Style="{StaticResource TextCaption}" FontSize="12"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+
+                    <!-- Справочник моделей -->
+                    <CollectionView Grid.Row="5"
+                                    ItemsSource="{Binding FilteredCatalog}"
+                                    SelectionMode="None"
+                                    HeightRequest="{OnIdiom Phone=260, Default=300}"
+                                    Margin="0,4,0,8">
+                        <CollectionView.EmptyView>
+                            <ContentView>
+                                <Label Text="В справочнике ничего не нашлось"
+                                       Style="{StaticResource TextCaption}"
+                                       HorizontalTextAlignment="Center"
+                                       Padding="20,24"/>
+                            </ContentView>
+                        </CollectionView.EmptyView>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border Style="{StaticResource RowButton}" Padding="20,12">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:InventoryViewModel}}, Path=SelectModelAndAddCommand}"
+                                                              CommandParameter="{Binding .}"/>
+                                    </Border.GestureRecognizers>
+                                    <Label Text="{Binding .}" FontSize="15"/>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

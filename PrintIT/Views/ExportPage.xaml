@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:PrintIT.ViewModels"
+             x:Class="PrintIT.Views.ExportPage"
+             x:DataType="viewmodels:ExportViewModel"
+             Title="{OnPlatform WinUI='', Default='Отчёт'}">
+
+    <ContentPage.Resources>
+        <!-- Строка выбора формата -->
+        <Style TargetType="Border" x:Key="OptionTile">
+            <Setter Property="WidthRequest" Value="40"/>
+            <Setter Property="HeightRequest" Value="40"/>
+            <Setter Property="StrokeThickness" Value="0"/>
+            <Setter Property="StrokeShape" Value="RoundRectangle 10"/>
+            <Setter Property="VerticalOptions" Value="Center"/>
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SurfaceSunken}, Dark={StaticResource SurfaceSunkenDark}}"/>
+        </Style>
+        <Style TargetType="Border" x:Key="RadioRing">
+            <Setter Property="WidthRequest" Value="22"/>
+            <Setter Property="HeightRequest" Value="22"/>
+            <Setter Property="StrokeThickness" Value="1.5"/>
+            <Setter Property="StrokeShape" Value="RoundRectangle 11"/>
+            <Setter Property="VerticalOptions" Value="Center"/>
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource InkTertiary}, Dark={StaticResource InkTertiaryDark}}"/>
+        </Style>
+        <Style TargetType="BoxView" x:Key="RadioDot">
+            <Setter Property="WidthRequest" Value="10"/>
+            <Setter Property="HeightRequest" Value="10"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="HorizontalOptions" Value="Center"/>
+            <Setter Property="VerticalOptions" Value="Center"/>
+            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource Accent}, Dark={StaticResource AccentDark}}"/>
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="*, Auto"
+          Padding="{OnIdiom Phone='20,8,20,16', Default='32,24,32,24'}"
+          MaximumWidthRequest="640">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Spacing="0">
+
+                <!-- Заголовок -->
+                <VerticalStackLayout Spacing="6" Margin="0,0,0,28">
+                    <Label Text="{Binding Session.Title}"
+                           Style="{StaticResource TextTitle}"
+                           SemanticProperties.HeadingLevel="Level1"/>
+                    <Label Text="Выберите формат. Готовый файл сохранится в папку «Загрузки»."
+                           Style="{StaticResource TextSecondary}"/>
+                </VerticalStackLayout>
+
+                <!-- Формат -->
+                <Label Text="Формат" Style="{StaticResource TextSectionLabel}" Margin="4,0,0,8"/>
+                <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,24">
+                    <VerticalStackLayout>
+
+                        <Border Style="{StaticResource RowButton}" Padding="16,14"
+                                SemanticProperties.Description="Формат Word">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectDocxCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14">
+                                <Border Style="{StaticResource OptionTile}">
+                                    <Path Data="{StaticResource IconDocument}" Style="{StaticResource Icon}"/>
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Word" FontSize="15" FontAttributes="Bold"/>
+                                    <Label Text="Ведомость с таблицей, готовая к печати" Style="{StaticResource TextCaption}"/>
+                                </VerticalStackLayout>
+                                <Border Grid.Column="2" Style="{StaticResource RadioRing}">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsDocxSelected}" Value="True">
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Accent}, Dark={StaticResource AccentDark}}"/>
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                    <BoxView Style="{StaticResource RadioDot}" IsVisible="{Binding IsDocxSelected}"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <BoxView Style="{StaticResource Divider}" Margin="70,0,0,0"/>
+
+                        <Border Style="{StaticResource RowButton}" Padding="16,14"
+                                SemanticProperties.Description="Формат Excel">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectXlsxCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14">
+                                <Border Style="{StaticResource OptionTile}">
+                                    <Grid>
+                                        <Path Data="{StaticResource IconTable}"
+                                              Style="{StaticResource Icon}"/>
+                                    </Grid>
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Excel" FontSize="15" FontAttributes="Bold"/>
+                                    <Label Text="Таблица для закупок: удобно фильтровать и сортировать" Style="{StaticResource TextCaption}"/>
+                                </VerticalStackLayout>
+                                <Border Grid.Column="2" Style="{StaticResource RadioRing}">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsXlsxSelected}" Value="True">
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Accent}, Dark={StaticResource AccentDark}}"/>
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                    <BoxView Style="{StaticResource RadioDot}" IsVisible="{Binding IsXlsxSelected}"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Содержимое -->
+                <Label Text="Содержимое" Style="{StaticResource TextSectionLabel}" Margin="4,0,0,8"/>
+                <Border Style="{StaticResource Card}" Padding="16,14" Margin="0,0,0,16">
+                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="16">
+                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                            <Label Text="Только устройства на замену" FontSize="15"/>
+                            <Label Text="В отчёт не попадут устройства с картриджем в норме" Style="{StaticResource TextCaption}"/>
+                        </VerticalStackLayout>
+                        <Switch Grid.Column="1" IsToggled="{Binding OnlyUrgent}"/>
+                    </Grid>
+                </Border>
+
+                <Label Text="{Binding ReportSummary}"
+                       Style="{StaticResource TextCaption}"
+                       Margin="4,0,4,0"/>
+
+                <!-- Результат выгрузки -->
+                <Border IsVisible="{Binding HasResult}"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="14,12"
+                        Margin="0,20,0,0"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource AccentSoft}, Dark={StaticResource AccentSoftDark}}">
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="10">
+                        <Path Data="{StaticResource IconCheck}" Style="{StaticResource IconAccent}"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding ResultMessage}"
+                               FontSize="14"
+                               VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Основное действие -->
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <Button Text="{Binding GenerateButtonText}"
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding GenerateAndShareCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"/>
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               HorizontalOptions="Start"
+                               VerticalOptions="Center"
+                               WidthRequest="20" HeightRequest="20"
+                               Margin="18,0,0,0"
+                               Color="{AppThemeBinding Light={StaticResource OnAccent}, Dark={StaticResource OnAccentDark}}"/>
+        </Grid>
+    </Grid>
+</ContentPage>
